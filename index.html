@@ -58,7 +58,7 @@
   <b>7</b>: route to the + mark<br>
   <b>9</b>: cancel route<br>
   * : show / hide help<br>
-  <span style="color:#9aa4b5">Version 3 (search on 8)</span>
+  <span style="color:#9aa4b5">Version 5 (search on 8)</span>
 </div>
 <div id="search">
   <b>Where to?</b>
@@ -66,6 +66,14 @@
   <div id="results"></div>
 </div>
 
+<script>
+// Shows script errors on screen so a problem on the phone can be read off it.
+window.onerror = function (msg, url, line) {
+  var b = document.getElementById('bar-bot');
+  if (b) { b.textContent = 'Error: ' + msg + ' (line ' + line + ')'; }
+  return false;
+};
+</script>
 <script>
 (function () {
   var TILE = 256;
@@ -86,6 +94,7 @@
   var view = { lat: 33.3528, lon: -111.789, z: 15 };
   var me = null;
   var follow = true;
+  var lastKey = '';
   var cache = {};
 
   var dest = null;            // {lat, lon}
@@ -200,7 +209,7 @@
   }
 
   function status() {
-    topEl.textContent = 'Zoom ' + view.z + (follow ? '  Following' : '  Free') + '  (* help)';
+    topEl.textContent = 'Zoom ' + view.z + (follow ? ' Follow' : ' Free') + ' v5 ' + lastKey;
     if (new Date().getTime() < msgUntil) { botEl.textContent = msgText; return; }
     if (!me) { return; }
     var mph = me.speed != null && !isNaN(me.speed) ? Math.round(me.speed * 2.23694) : null;
@@ -408,8 +417,15 @@
   /* ---------- keys ---------- */
   document.onkeydown = function (e) {
     e = e || window.event;
+    lastKey = (e.key || '?') + '/' + (e.keyCode || e.which || '?');
+    status();
     if (searchMode) { if (searchKey(e) && e.preventDefault) { e.preventDefault(); } return; }
-    var k = e.key, code = e.keyCode, step = 64, used = true;
+    var k = e.key, code = e.keyCode || e.which, step = 64, used = true;
+    if (k === 'Unidentified' || k === 'Process') { k = ''; }
+    if (!k && e.code) {
+      var m = /^(?:Digit|Numpad)([0-9])$/.exec(e.code);
+      if (m) { k = m[1]; }
+    }
     if (helpEl.style.display === 'block' && (k === '*' || code === 106 || k === 'Enter' || code === 13)) {
       helpEl.style.display = 'none';
     } else if (k === 'ArrowUp' || code === 38) { pan(0, -step); }
